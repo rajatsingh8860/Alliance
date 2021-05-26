@@ -100,7 +100,7 @@ getGroupWithinRange() async {
         distance_in_km = (distance~/1000).toInt();
         var set1=Set.from(element["interest"]);
         var set2=Set.from(interest_data);
-        if(distance_in_km <= 20 && set1.intersection(set2).isNotEmpty){
+        if(set1.intersection(set2).isNotEmpty){
          setState(() {
            recomendedUser.add(element["groupName"]);
          });
@@ -137,16 +137,12 @@ getGroupWithinRange() async {
               fontFamily: 'Oswald',
               color: Colors.black),
         ),
-        actions:<Widget>[
-         IconButton(icon: Icon(Icons.search), onPressed: (){
-           showSearch(context: context, delegate: DataSearch(filtered_user));
-         })
-       ]
+       
       ),
       body:StreamBuilder(
                   stream: Firestore.instance
                       .collection('Alliance')
-                      .where("groupName", whereIn: filtered_user)
+                      .where("interest",arrayContainsAny: interest_data)
                       .snapshots(),
                   builder: (BuildContext context, snapshot) {
                     if (!snapshot.hasData)
@@ -285,9 +281,9 @@ getGroupWithinRange() async {
 }
 
 class DataSearch extends SearchDelegate<String>{
- DataSearch(this.filtered_user);
+ DataSearch(this.interest_data);
 
- List<dynamic> filtered_user = List();
+ List<dynamic> interest_data = List();
 
   @override
   List<Widget> buildActions(BuildContext context) {
@@ -320,7 +316,7 @@ class DataSearch extends SearchDelegate<String>{
       return StreamBuilder(
                   stream: Firestore.instance
                       .collection('Alliance')
-                      .where("groupName", whereIn: filtered_user)
+                      .where("interest", arrayContainsAny: interest_data)
                       .where("groupName",isEqualTo: query)
                       .snapshots(),
                   builder: (BuildContext context, snapshot) {
@@ -460,7 +456,7 @@ class DataSearch extends SearchDelegate<String>{
     @override
     Widget buildSuggestions(BuildContext context) {
     // show when someone searches for something
-    final suggestionList = filtered_user.where((element) => element.startsWith(query)).toList();
+    final suggestionList = interest_data.where((element) => element.startsWith(query)).toList();
     return ListView.builder(
       itemBuilder: (context,index) => ListTile(
         onTap: (){

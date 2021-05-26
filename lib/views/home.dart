@@ -38,10 +38,13 @@ class HomePageState extends State<HomePage> {
     String url = currentUser.photoUrl;
     setState(() {
       userId = id;
-      photoUrl = url;
+      if (url != null) {
+        photoUrl = url;
+      } else {
+        photoUrl = "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.istockphoto.com%2Fphotos%2Fone-person&psig=AOvVaw0xphJEp-I1hhtp5VAOsOaT&ust=1622110033168000&source=images&cd=vfe&ved=0CAIQjRxqFwoTCPing_eM5_ACFQAAAAAdAAAAABAD";
+      }
     });
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -49,13 +52,13 @@ class HomePageState extends State<HomePage> {
         appBar: AppBar(
           brightness: Brightness.light,
           backgroundColor: Colors.white,
-          leading: Icon(Icons.search,color: Colors.black,),
+         
           title: Text("Chat",
               style: TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.bold,
                   fontSize: 25)),
-                  centerTitle: true,
+          centerTitle: true,
           actions: <Widget>[
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -102,10 +105,10 @@ class HomePageState extends State<HomePage> {
     } else {
       return Container(
         decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.orangeAccent, Colors.pinkAccent],
-                      ),
-                      borderRadius: BorderRadius.circular(20.0)),
+            gradient: LinearGradient(
+              colors: [Colors.orangeAccent, Colors.pinkAccent],
+            ),
+            borderRadius: BorderRadius.circular(20.0)),
         child: FlatButton(
           child: Row(
             children: <Widget>[
@@ -129,7 +132,6 @@ class HomePageState extends State<HomePage> {
               ),
               Flexible(
                   child: Container(
-                    
                       child: Column(
                         children: <Widget>[
                           Container(
@@ -152,7 +154,7 @@ class HomePageState extends State<HomePage> {
                         document.documentID,
                         document['photoUrl'])));
           },
-        //  color: Colors.orange,
+          //  color: Colors.orange,
           padding: EdgeInsets.fromLTRB(25.0, 10.0, 25.0, 10.0),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),

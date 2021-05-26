@@ -1,9 +1,11 @@
+import 'package:alliance/views/Recomended.dart';
 import 'package:alliance/views/about.dart';
+import 'package:alliance/views/loginpage.dart';
+import 'package:alliance/views/new_intro.dart';
 import 'package:alliance/views/profile.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:android_intent/android_intent.dart';
-import 'package:alliance/views/Recomended.dart';
 import 'package:alliance/views/auth.dart';
 import 'package:alliance/views/crud.dart';
 import 'package:alliance/views/group_detail.dart';
@@ -17,25 +19,20 @@ import 'package:flutter/widgets.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hexcolor/hexcolor.dart';
-import 'package:double_back_to_close_app/double_back_to_close_app.dart';
 
 class GroupList extends StatefulWidget {
-  GroupList(recomendedUser);
-  GroupList.customConstructor();
   int flag;
-  List<String> recomendedUser = List();
   String userId;
 
   @override
   State<StatefulWidget> createState() {
     // TODO: implement createState
-    return GroupListState(recomendedUser);
+    return GroupListState();
   }
 }
 
 class GroupListState extends State<GroupList> {
-  GroupListState(recomendedUser);
-  GroupListState.customConstructor();
+  GroupListState();
   String userId, recomended_data;
 
   int flag;
@@ -47,6 +44,7 @@ class GroupListState extends State<GroupList> {
   String new_icon;
   AuthService authService = AuthService();
   CrudeMethod crudeMethod = CrudeMethod();
+
   String interestCount = '0';
   var setUserDocument;
   List<String> recomendedUser = List();
@@ -82,7 +80,7 @@ class GroupListState extends State<GroupList> {
     });
     getUserDocumentId();
     getArrayElements();
-    getFilteredUserList();
+    //  getFilteredUserList();
     //   getGroupWithinRange();
   }
 
@@ -303,7 +301,7 @@ class GroupListState extends State<GroupList> {
         distance_in_km = (distance ~/ 1000).toInt();
         var set1 = Set.from(element["interest"]);
         var set2 = Set.from(interest_data);
-        if (distance_in_km <= 20 && set1.intersection(set2).isNotEmpty) {
+        if (set1.intersection(set2).isNotEmpty) {
           setState(() {
             recomendedUser.add(element["groupName"]);
           });
@@ -397,6 +395,19 @@ class GroupListState extends State<GroupList> {
         ),
         actions: <Widget>[
           IconButton(
+              icon: Icon(
+                Icons.logout,
+                color: Colors.black,
+              ),
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut().then((value) {
+                  Navigator.pushReplacement(context,
+                      MaterialPageRoute(builder: (context) {
+                    return Intro();
+                  }));
+                });
+              }),
+          IconButton(
             icon: CircleAvatar(
               backgroundColor: Colors.white,
               child: Icon(
@@ -410,12 +421,12 @@ class GroupListState extends State<GroupList> {
               } catch (e) {
                 Fluttertoast.showToast(msg: e);
               }*/
-              Navigator.push(context, MaterialPageRoute(builder: (context){
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
                 return About();
               }));
             },
           ),
-         /* IconButton(
+          /* IconButton(
             icon: CircleAvatar(
                 backgroundColor: Colors.white,
                 child: Icon(Icons.account_circle, color: Colors.black)),
@@ -428,369 +439,341 @@ class GroupListState extends State<GroupList> {
           ),*/
         ],
       ),
-      body: DoubleBackToCloseApp(
-          snackBar: SnackBar(
-            content: Text("Tap again to exit"),
-          ),
-          child: Container(
-              height: height,
-              child: Column(
-                children: [
-                  Container(
-                    margin: EdgeInsets.only(top: 20),
-                    child: Row(
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.only(left: width / 22),
-                          child: Text("Upcoming Event",
-                              style: TextStyle(
-                                  fontSize: 20, fontFamily: 'Oswald')),
-                        ),
-                        SizedBox(width: width / 2.8),
-                        SizedBox(width: width / 20),
-                        IconButton(
-                            icon:
-                                Icon(Icons.arrow_forward, color: Colors.black),
-                            onPressed: () {
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => Upcoming()));
-                            })
-                      ],
+      body: Container(
+          height: height,
+          child: Column(
+            children: [
+              Container(
+                margin: EdgeInsets.only(top: 20),
+                child: Row(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.only(left: width / 22),
+                      child: Text("Upcoming Event",
+                          style: TextStyle(fontSize: 20, fontFamily: 'Oswald')),
                     ),
-                  ),
-                  StreamBuilder(
-                      stream: Firestore.instance
-                          .collection("Alliance")
-                          .orderBy('date')
-                          .snapshots(),
-                      builder: (BuildContext context, snapshot) {
-                        if (!snapshot.hasData)
-                          return Container(
-                              alignment: Alignment.center,
-                              child: CircularProgressIndicator());
-                        return Container(
-                          height: height / 3.5,
-                          child: Container(
-                            padding: EdgeInsets.only(top: 10),
-                            child: new ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              physics: BouncingScrollPhysics(),
-                              itemCount: snapshot.data.documents.length,
-                              itemBuilder: (context, i) {
-                                String image_url =
-                                    snapshot.data.documents[i].data['imgUrl'];
-                                int count =
-                                    snapshot.data.documents[i].data['seat'];
-                                int flag =
-                                    snapshot.data.documents[i].data['flag'];
-                                String email_id =
-                                    snapshot.data.documents[i].data['email'];
-                                String group_name = snapshot
-                                    .data.documents[i].data['groupName'];
-                                String location =
-                                    snapshot.data.documents[i].data['location'];
-                                String description = snapshot
-                                    .data.documents[i].data['description'];
-                                DateTime date = snapshot
-                                    .data.documents[i].data['date']
-                                    .toDate();
-                                String time =
-                                    snapshot.data.documents[i].data['time'];
-                                String query =
-                                    snapshot.data.documents[i].documentID;
+                    SizedBox(width: width / 2.8),
+                    SizedBox(width: width / 20),
+                    IconButton(
+                        icon: Icon(Icons.arrow_forward, color: Colors.black),
+                        onPressed: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => Upcoming()));
+                        })
+                  ],
+                ),
+              ),
+              StreamBuilder(
+                  stream: Firestore.instance
+                      .collection("Alliance")
+                      .orderBy('date')
+                      .snapshots(),
+                  builder: (BuildContext context, snapshot) {
+                    if (!snapshot.hasData)
+                      return Container(
+                          alignment: Alignment.center,
+                          child: CircularProgressIndicator());
+                    return Container(
+                      height: height / 3.5,
+                      child: Container(
+                        padding: EdgeInsets.only(top: 10),
+                        child: new ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          physics: BouncingScrollPhysics(),
+                          itemCount: snapshot.data.documents.length,
+                          itemBuilder: (context, i) {
+                            String image_url =
+                                snapshot.data.documents[i].data['imgUrl'];
+                            int count = snapshot.data.documents[i].data['seat'];
+                            int flag = snapshot.data.documents[i].data['flag'];
+                            String email_id =
+                                snapshot.data.documents[i].data['email'];
+                            String group_name =
+                                snapshot.data.documents[i].data['groupName'];
+                            String location =
+                                snapshot.data.documents[i].data['location'];
+                            String description =
+                                snapshot.data.documents[i].data['description'];
+                            DateTime date = snapshot
+                                .data.documents[i].data['date']
+                                .toDate();
+                            String time =
+                                snapshot.data.documents[i].data['time'];
+                            String query =
+                                snapshot.data.documents[i].documentID;
 
-                                return new Container(
-                                    width: width / 1.4,
-                                    //  child: Hero(
-                                    //  tag: image_url,
-                                    child: GestureDetector(
-                                      onTap: () async {
-                                        FirebaseUser user = await FirebaseAuth
-                                            .instance
-                                            .currentUser();
-                                        String userId = user.uid;
-                                        Navigator.push(context,
-                                            MaterialPageRoute(
-                                                builder: (context) {
-                                          return GroupDetail(
-                                              snapshot
-                                                  .data.documents[i].documentID,
-                                              userId,
-                                              count,
-                                              query,
-                                              email_id,
-                                              group_name,
-                                              location,
-                                              description,
-                                              image_url,
-                                              date,
-                                              time);
-                                        }));
-                                      },
-                                      child: Column(
+                            return new Container(
+                                width: width / 1.4,
+                                //  child: Hero(
+                                //  tag: image_url,
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    FirebaseUser user = await FirebaseAuth
+                                        .instance
+                                        .currentUser();
+                                    String userId = user.uid;
+                                    Navigator.push(context,
+                                        MaterialPageRoute(builder: (context) {
+                                      return GroupDetail(
+                                          snapshot.data.documents[i].documentID,
+                                          userId,
+                                          count,
+                                          query,
+                                          email_id,
+                                          group_name,
+                                          location,
+                                          description,
+                                          image_url,
+                                          date,
+                                          time);
+                                    }));
+                                  },
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        height: height / 4.6,
+                                        width: width,
+                                        padding: EdgeInsets.all(10),
+                                        // child: Container(
+                                        child: Container(
+                                            decoration: BoxDecoration(
+                                                border: Border.all(
+                                                    color: Colors.black),
+                                                gradient: LinearGradient(
+                                                    colors: [
+                                                      Colors.red,
+                                                      Colors.blue
+                                                    ],
+                                                    begin: Alignment.topRight,
+                                                    end: Alignment.bottomLeft),
+                                                borderRadius:
+                                                    BorderRadius.circular(30)),
+                                            //  child:Stack(
+                                            //  children: [
+                                            //    Positioned(
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(30),
+                                              child: Image.network(image_url,
+                                                  fit: BoxFit.cover),
+                                            )
+                                            //  )
+                                            // ],
+                                            //)
+                                            ),
+                                      ),
+                                      Text(
+                                        group_name,
+                                        style: TextStyle(
+                                            //  fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                            fontFamily: 'Oswald',
+                                            color: Colors.black),
+                                      ),
+                                      Row(
                                         children: [
-                                          Container(
-                                            height: height / 4.6,
-                                            width: width,
-                                            padding: EdgeInsets.all(10),
-                                            // child: Container(
-                                            child: Container(
-                                                decoration: BoxDecoration(
-                                                    border: Border.all(
-                                                        color: Colors.black),
-                                                    gradient: LinearGradient(
-                                                        colors: [
-                                                          Colors.red,
-                                                          Colors.blue
-                                                        ],
-                                                        begin:
-                                                            Alignment.topRight,
-                                                        end: Alignment
-                                                            .bottomLeft),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            30)),
-                                                //  child:Stack(
-                                                //  children: [
-                                                //    Positioned(
-                                                child: ClipRRect(
-                                                  borderRadius:
-                                                      BorderRadius.circular(30),
-                                                  child: Image.network(
-                                                      image_url,
-                                                      fit: BoxFit.cover),
-                                                )
-                                                //  )
-                                                // ],
-                                                //)
-                                                ),
+                                          Padding(
+                                            padding: EdgeInsets.only(
+                                                left: width / 4),
+                                            child: Text(
+                                              "Date : ",
+                                              style: TextStyle(
+                                                  //  fontWeight: FontWeight.bold,
+                                                  fontSize: 12,
+                                                  fontFamily: 'Oswald',
+                                                  color: Colors.black),
+                                            ),
                                           ),
                                           Text(
-                                            group_name,
+                                            date.toString().substring(0, 10),
                                             style: TextStyle(
                                                 //  fontWeight: FontWeight.bold,
-                                                fontSize: 14,
+                                                fontSize: 12,
                                                 fontFamily: 'Oswald',
                                                 color: Colors.black),
                                           ),
-                                          Row(
-                                            children: [
-                                              Padding(
-                                                padding: EdgeInsets.only(
-                                                    left: width / 4),
-                                                child: Text(
-                                                  "Date : ",
-                                                  style: TextStyle(
-                                                      //  fontWeight: FontWeight.bold,
-                                                      fontSize: 12,
-                                                      fontFamily: 'Oswald',
-                                                      color: Colors.black),
-                                                ),
-                                              ),
-                                              Text(
-                                                date
-                                                    .toString()
-                                                    .substring(0, 10),
-                                                style: TextStyle(
-                                                    //  fontWeight: FontWeight.bold,
-                                                    fontSize: 12,
-                                                    fontFamily: 'Oswald',
-                                                    color: Colors.black),
-                                              ),
-                                            ],
-                                          )
-                                          //   ),
                                         ],
-                                        // )
-                                      ),
-                                    ));
-                              },
-                            ),
-                          ),
-                        );
-                      }),
-
-                  Container(
-                    margin: EdgeInsets.only(top: 20),
-                    child: Row(
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.only(left: width / 22),
-                          child: Text("Recomended Event",
-                              style: TextStyle(
-                                  fontSize: 20, fontFamily: 'Oswald')),
+                                      )
+                                      //   ),
+                                    ],
+                                    // )
+                                  ),
+                                ));
+                          },
                         ),
-                        SizedBox(width: width / 2.8),
-                        IconButton(
-                            icon:
-                                Icon(Icons.arrow_forward, color: Colors.black),
-                            onPressed: () {
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => Recomended()));
-                            })
-                      ],
+                      ),
+                    );
+                  }),
+
+              Container(
+                margin: EdgeInsets.only(top: 20),
+                child: Row(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.only(left: width / 22),
+                      child: Text("Recomended Event",
+                          style: TextStyle(fontSize: 20, fontFamily: 'Oswald')),
                     ),
-                  ),
+                    SizedBox(width: width / 2.8),
+                    IconButton(
+                        icon: Icon(Icons.arrow_forward, color: Colors.black),
+                        onPressed: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => Recomended()));
+                        })
+                  ],
+                ),
+              ),
 
-                  //Fetch nearby events
-                  StreamBuilder(
-                      stream: Firestore.instance
-                          .collection("Alliance")
-                          .where("groupName", whereIn: filtered_user)
-                          .orderBy('date')
-                          .snapshots(),
-                      builder: (BuildContext context, snapshot) {
-                        if (!snapshot.hasData)
-                          return Container(
-                              alignment: Alignment.center,
-                              child: CircularProgressIndicator());
-                        return Container(
-                          height: height / 3.5,
-                          child: Container(
-                            padding: EdgeInsets.only(top: 10),
-                            child: new ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              physics: BouncingScrollPhysics(),
-                              itemCount: snapshot.data.documents.length,
-                              itemBuilder: (context, i) {
-                                String image_url =
-                                    snapshot.data.documents[i].data['imgUrl'];
-                                int count =
-                                    snapshot.data.documents[i].data['seat'];
-                                int flag =
-                                    snapshot.data.documents[i].data['flag'];
-                                String email_id =
-                                    snapshot.data.documents[i].data['email'];
-                                String group_name = snapshot
-                                    .data.documents[i].data['groupName'];
-                                String location =
-                                    snapshot.data.documents[i].data['location'];
-                                String description = snapshot
-                                    .data.documents[i].data['description'];
-                                DateTime date = snapshot
-                                    .data.documents[i].data['date']
-                                    .toDate();
-                                String time =
-                                    snapshot.data.documents[i].data['time'];
-                                String query =
-                                    snapshot.data.documents[i].documentID;
+              //Fetch nearby events
+              StreamBuilder(
+                  stream: Firestore.instance
+                      .collection("Alliance")
+                      .where("interest", arrayContainsAny: interest_data)
+                      .orderBy('date')
+                      .snapshots(),
+                  builder: (BuildContext context, snapshot) {
+                    if (!snapshot.hasData)
+                      return Container(
+                          alignment: Alignment.center,
+                          child: CircularProgressIndicator());
+                    return Container(
+                      height: height / 3.5,
+                      child: Container(
+                        padding: EdgeInsets.only(top: 10),
+                        child: new ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          physics: BouncingScrollPhysics(),
+                          itemCount: snapshot.data.documents.length,
+                          itemBuilder: (context, i) {
+                            String image_url =
+                                snapshot.data.documents[i].data['imgUrl'];
+                            int count = snapshot.data.documents[i].data['seat'];
+                            int flag = snapshot.data.documents[i].data['flag'];
+                            String email_id =
+                                snapshot.data.documents[i].data['email'];
+                            String group_name =
+                                snapshot.data.documents[i].data['groupName'];
+                            String location =
+                                snapshot.data.documents[i].data['location'];
+                            String description =
+                                snapshot.data.documents[i].data['description'];
+                            DateTime date = snapshot
+                                .data.documents[i].data['date']
+                                .toDate();
+                            String time =
+                                snapshot.data.documents[i].data['time'];
+                            String query =
+                                snapshot.data.documents[i].documentID;
 
-                                return new Container(
-                                    width: width / 1.4,
-                                    //  child: Hero(
-                                    //  tag: image_url,
-                                    child: GestureDetector(
-                                      onTap: () async {
-                                        FirebaseUser user = await FirebaseAuth
-                                            .instance
-                                            .currentUser();
-                                        String userId = user.uid;
-                                        Navigator.push(context,
-                                            MaterialPageRoute(
-                                                builder: (context) {
-                                          return GroupDetail(
-                                              snapshot
-                                                  .data.documents[i].documentID,
-                                              userId,
-                                              count,
-                                              query,
-                                              email_id,
-                                              group_name,
-                                              location,
-                                              description,
-                                              image_url,
-                                              date,
-                                              time);
-                                        }));
-                                      },
-                                      child: Column(
+                            return new Container(
+                                width: width / 1.4,
+                                //  child: Hero(
+                                //  tag: image_url,
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    FirebaseUser user = await FirebaseAuth
+                                        .instance
+                                        .currentUser();
+                                    String userId = user.uid;
+                                    Navigator.push(context,
+                                        MaterialPageRoute(builder: (context) {
+                                      return GroupDetail(
+                                          snapshot.data.documents[i].documentID,
+                                          userId,
+                                          count,
+                                          query,
+                                          email_id,
+                                          group_name,
+                                          location,
+                                          description,
+                                          image_url,
+                                          date,
+                                          time);
+                                    }));
+                                  },
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        height: height / 4.6,
+                                        width: width,
+                                        padding: EdgeInsets.all(10),
+                                        // child: Container(
+                                        child: Container(
+                                            decoration: BoxDecoration(
+                                                border: Border.all(
+                                                    color: Colors.black),
+                                                gradient: LinearGradient(
+                                                    colors: [
+                                                      Colors.red,
+                                                      Colors.blue
+                                                    ],
+                                                    begin: Alignment.topRight,
+                                                    end: Alignment.bottomLeft),
+                                                borderRadius:
+                                                    BorderRadius.circular(30)),
+                                            //  child:Stack(
+                                            //  children: [
+                                            //    Positioned(
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(30),
+                                              child: Image.network(image_url,
+                                                  fit: BoxFit.cover),
+                                            )
+                                            //  )
+                                            // ],
+                                            //)
+                                            ),
+                                      ),
+                                      Text(
+                                        group_name,
+                                        style: TextStyle(
+                                            //  fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                            fontFamily: 'Oswald',
+                                            color: Colors.black),
+                                      ),
+                                      Row(
                                         children: [
-                                          Container(
-                                            height: height / 4.6,
-                                            width: width,
-                                            padding: EdgeInsets.all(10),
-                                            // child: Container(
-                                            child: Container(
-                                                decoration: BoxDecoration(
-                                                    border: Border.all(
-                                                        color: Colors.black),
-                                                    gradient: LinearGradient(
-                                                        colors: [
-                                                          Colors.red,
-                                                          Colors.blue
-                                                        ],
-                                                        begin:
-                                                            Alignment.topRight,
-                                                        end: Alignment
-                                                            .bottomLeft),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            30)),
-                                                //  child:Stack(
-                                                //  children: [
-                                                //    Positioned(
-                                                child: ClipRRect(
-                                                  borderRadius:
-                                                      BorderRadius.circular(30),
-                                                  child: Image.network(
-                                                      image_url,
-                                                      fit: BoxFit.cover),
-                                                )
-                                                //  )
-                                                // ],
-                                                //)
-                                                ),
+                                          Padding(
+                                            padding: EdgeInsets.only(
+                                                left: width / 4),
+                                            child: Text(
+                                              "Date : ",
+                                              style: TextStyle(
+                                                  //  fontWeight: FontWeight.bold,
+                                                  fontSize: 12,
+                                                  fontFamily: 'Oswald',
+                                                  color: Colors.black),
+                                            ),
                                           ),
                                           Text(
-                                            group_name,
+                                            date.toString().substring(0, 10),
                                             style: TextStyle(
                                                 //  fontWeight: FontWeight.bold,
-                                                fontSize: 14,
+                                                fontSize: 12,
                                                 fontFamily: 'Oswald',
                                                 color: Colors.black),
                                           ),
-                                          Row(
-                                            children: [
-                                              Padding(
-                                                padding: EdgeInsets.only(
-                                                    left: width / 4),
-                                                child: Text(
-                                                  "Date : ",
-                                                  style: TextStyle(
-                                                      //  fontWeight: FontWeight.bold,
-                                                      fontSize: 12,
-                                                      fontFamily: 'Oswald',
-                                                      color: Colors.black),
-                                                ),
-                                              ),
-                                              Text(
-                                                date
-                                                    .toString()
-                                                    .substring(0, 10),
-                                                style: TextStyle(
-                                                    //  fontWeight: FontWeight.bold,
-                                                    fontSize: 12,
-                                                    fontFamily: 'Oswald',
-                                                    color: Colors.black),
-                                              ),
-                                            ],
-                                          )
-                                          //   ),
                                         ],
-                                        // )
-                                      ),
-                                    ));
-                              },
-                            ),
-                          ),
-                        );
-                      }),
-                ],
-              ))),
+                                      )
+                                      //   ),
+                                    ],
+                                    // )
+                                  ),
+                                ));
+                          },
+                        ),
+                      ),
+                    );
+                  }),
+            ],
+          )),
     );
   }
 }

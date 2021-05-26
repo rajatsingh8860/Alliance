@@ -70,7 +70,7 @@ class LoginPageState extends State<Login> {
       setState(() {
         isLoading = false;
       });
-      Navigator.push(context, MaterialPageRoute(builder: (context)=>GroupList(firebaseUser.uid)));
+      Navigator.push(context, MaterialPageRoute(builder: (context)=>GroupList()));
     }
     else{
       setState(() {

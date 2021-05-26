@@ -7,10 +7,7 @@ import 'package:bubble_bottom_bar/bubble_bottom_bar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:hexcolor/hexcolor.dart';
-import 'package:icon_shadow/icon_shadow.dart';
 import 'package:random_string/random_string.dart';
 
 class navigation extends StatefulWidget {
@@ -31,7 +28,7 @@ class navigationState extends State<navigation> {
   bool isLoading;
   List<String> alreadyExistingUser = List();
   final List<Widget> _children = [
-    GroupList.customConstructor(),
+    GroupList(),
     Code(),
     NotificationOfGroups(),
     HomePage()
@@ -43,7 +40,7 @@ class navigationState extends State<navigation> {
     getArrayElements();
     changeWidget();
     getCurrentLocation();
-    getListOfAlreadyRegisteredUser();
+   // getListOfAlreadyRegisteredUser();
     makeDummyDocument();
     getGroupWithinRange();
   }

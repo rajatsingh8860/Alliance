@@ -132,7 +132,11 @@ class GroupPageState extends State<addGroup> {
   getPhotoUrl() async {
     FirebaseUser user = await FirebaseAuth.instance.currentUser();
     setState(() {
-      photoUrl = user.photoUrl;
+      if (user.photoUrl != null) {
+        photoUrl = user.photoUrl;
+      } else {
+        photoUrl = "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.istockphoto.com%2Fphotos%2Fone-person&psig=AOvVaw0xphJEp-I1hhtp5VAOsOaT&ust=1622110033168000&source=images&cd=vfe&ved=0CAIQjRxqFwoTCPing_eM5_ACFQAAAAAdAAAAABAD";
+      }
     });
     isLoading = false;
   }
@@ -262,6 +266,8 @@ class GroupPageState extends State<addGroup> {
         new DropdownMenuItem(child: new Text("Dance"), value: "Dance"));
     ListDrop.add(
         new DropdownMenuItem(child: new Text("Drama"), value: "Drama"));
+         ListDrop.add(
+        new DropdownMenuItem(child: new Text("Drama"), value: "Coding"));
   }
 
   showNumberDialog(BuildContext context) {
@@ -284,7 +290,7 @@ class GroupPageState extends State<addGroup> {
     });
   }
 
-  final valuestopopulate = {1: "Music", 2: "Dance", 3: "Drama"};
+  final valuestopopulate = {1: "Music", 2: "Dance", 3: "Drama",4: "Coding"};
 
   void populateMultiSelect() {
     for (int v in valuestopopulate.keys) {
