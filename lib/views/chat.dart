@@ -85,7 +85,6 @@ class ChatScreenState extends State<ChatScreen> {
 
   void onFocusChange() {
     if (focusNode.hasFocus) {
-      //Hide Sticker when keyboard apperars.
       setState(() {
         isShowSticker = false;
       });
@@ -144,7 +143,6 @@ class ChatScreenState extends State<ChatScreen> {
   }
 
   void onSendMessage(String content, int type) {
-    //type : 0=text,1=image,2=sticker
     if (content.trim() != '') {
       textEditingController.clear();
       var documentReference = Firestore.instance

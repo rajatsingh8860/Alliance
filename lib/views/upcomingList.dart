@@ -116,7 +116,7 @@ List<String> suggestions = List();
                                             description,
                                             image_url,
                                             date,
-                                            time);
+                                            time,snapshot.data.documents[i].data['fees']);
                                       }));
                                     },
                                     child: Column(
@@ -288,7 +288,7 @@ class DataSearch extends SearchDelegate<String>{
                                             description,
                                             image_url,
                                             date,
-                                            time);
+                                            time,snapshot.data.documents[i].data['fees']);
                                       }));
                                     },
                                     child: Column(

@@ -39,20 +39,12 @@ class navigationState extends State<navigation> {
     super.initState();
     getArrayElements();
     changeWidget();
-    getCurrentLocation();
    // getListOfAlreadyRegisteredUser();
     makeDummyDocument();
     getGroupWithinRange();
   }
 
-  getCurrentLocation() async {
-    final position = await Geolocator()
-        .getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
-    setState(() {
-      currentLatitude = position.latitude;
-      currentLongitude = position.longitude;
-    });
-  }
+  
 
   getArrayElements() async {
     FirebaseUser user = await FirebaseAuth.instance.currentUser();
@@ -121,7 +113,6 @@ class navigationState extends State<navigation> {
     String documentId = user.uid;
     Firestore.instance.collection("Alliance").snapshots().listen((event) {
       event.documents.forEach((element) async {
-        //   List<Placemark> placemark = await Geolocator().placemarkFromAddress(element["location"]);
         double distance = await Geolocator().distanceBetween(currentLatitude,
             currentLongitude, element["latitude"], element["longitude"]);
         distance_in_km = (distance ~/ 1000).toInt();

@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:hexcolor/hexcolor.dart';
 
 class Recomended extends StatefulWidget{
@@ -29,7 +28,6 @@ class RecomendedState extends State<Recomended>{
     getArrayElements();
     getArrayElements();
     getFilteredUserList();
-    getCurrentLocation();
     getGroupWithinRange();
     getSuggestions();
   }
@@ -44,13 +42,6 @@ class RecomendedState extends State<Recomended>{
    });
   }
 
-   getCurrentLocation() async {
-      final position = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
-      setState(() {
-        currentLatitude = position.latitude;
-        currentLongitude = position.longitude;
-      });
-   }
 
    getFilteredUserList() async {
     FirebaseUser user = await FirebaseAuth.instance.currentUser();
@@ -96,8 +87,6 @@ getGroupWithinRange() async {
     String documentId = user.uid;
     Firestore.instance.collection("Alliance").snapshots().listen((event) {
        event.documents.forEach((element) async {
-        double distance = await Geolocator().distanceBetween(currentLatitude, currentLongitude, element["latitude"], element["longitude"]);
-        distance_in_km = (distance~/1000).toInt();
         var set1=Set.from(element["interest"]);
         var set2=Set.from(interest_data);
         if(set1.intersection(set2).isNotEmpty){
@@ -201,7 +190,7 @@ getGroupWithinRange() async {
                                             description,
                                             image_url,
                                             date,
-                                            time);
+                                            time,snapshot.data.documents[i].data['fees']);
                                       }));
                                     },
                                     child: Column(
@@ -376,7 +365,7 @@ class DataSearch extends SearchDelegate<String>{
                                             description,
                                             image_url,
                                             date,
-                                            time);
+                                            time,snapshot.data.documents[i].data['fees']);
                                       }));
                                     },
                                     child: Column(

@@ -23,7 +23,6 @@ class ProfileState extends State<Profile> {
   void initState() {
     super.initState();
     getProfilePicture();
-    getCurrentLocation();
     getGroupFollowedByUser();
   }
 
@@ -56,23 +55,7 @@ class ProfileState extends State<Profile> {
     });
   }
 
-  getCurrentLocation() async {
-    //final position = await Geolocator().getCurrentPosition()
-    final position = await Geolocator()
-        .getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
-    List<Placemark> placemark = await Geolocator()
-        .placemarkFromCoordinates(position.latitude, position.longitude);
-    Placemark placeMark = placemark[0];
-    String name = placeMark.name;
-    String subLocality = placeMark.subLocality;
-    String locality = placeMark.locality;
-    // String administrativeArea = placeMark.administrativeArea;
-    String postalCode = placeMark.postalCode;
-    String location = "${name} ${subLocality} ${locality} ${postalCode}";
-    setState(() {
-      address = location;
-    });
-  }
+  
 
   @override
   Widget build(BuildContext context) {

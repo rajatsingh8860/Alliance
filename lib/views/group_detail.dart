@@ -2,11 +2,13 @@ import 'package:alliance/views/auth.dart';
 import 'package:alliance/views/crud.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:alliance/views/qr_code.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -27,6 +29,7 @@ class GroupDetail extends StatefulWidget {
   String query, email_id, email, image_url;
   String group_name, description, location, time, userId;
   DateTime date;
+  var fees;
   GroupDetail(
       this.peerId,
       this.userId,
@@ -38,7 +41,8 @@ class GroupDetail extends StatefulWidget {
       this.description,
       this.image_url,
       this.date,
-      this.time);
+      this.time,
+      this.fees);
   //Group(this.email);
   @override
   State<StatefulWidget> createState() {
@@ -53,24 +57,114 @@ class GroupDetail extends StatefulWidget {
         this.description,
         this.image_url,
         this.date,
-        this.time);
+        this.time,
+        this.fees);
   }
 }
 
 class GroupDetailState extends State<GroupDetail> {
   SharedPreferences prefs;
+  Razorpay pay;
+  var phoneNo;
+
   String groupChatId;
   var current_flag;
   String joinedGroupName;
   List<String> x = List();
+
+  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    if (response != null) {
+      FirebaseUser user = await FirebaseAuth.instance.currentUser();
+      var documentId = user.uid;
+
+      Map<String, dynamic> blogMap = {
+        "user_email": user.email,
+        "group_Name": group_name,
+        "date": date.toString().substring(0, 11),
+        "imageUrl": image_url
+      };
+      Firestore.instance
+          .collection("Qr Code")
+          .document(documentId)
+          .collection('Registered')
+          .add(blogMap)
+          .catchError((e) {
+        print(e);
+      });
+
+      readLocal();
+      if (20 - count > 1) {
+        email(email_id);
+      }
+      if (count > 0) {
+        count = count - 1;
+      }
+      // setState(() {
+      flag = 1;
+      // });
+      flag = 1;
+      crudeMethod.updateData(query, {'seat': count});
+      updateflagdata('1');
+      if (flag == 1) {
+        setState(() {
+          selectedWidget = WidgetMaker.Another;
+        });
+      }
+    }
+  }
+
+  void _handlePaymentError(PaymentFailureResponse response) {
+    Fluttertoast.showToast(msg: "Payment failed");
+  }
+
+  void _handleExternalWallet(ExternalWalletResponse response) {
+    print(
+        'You have chosen to pay via : ${response.walletName}. It will take some time to reflect your payment.');
+  }
+
+  getUserDetail() async {
+    final FirebaseUser user = await FirebaseAuth.instance.currentUser();
+    setState(() {
+      phoneNo = user.phoneNumber;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
+    getUserDetail();
+    pay = Razorpay();
+    pay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+    pay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+    pay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
     getData();
     checkFollowButton();
     createFollowModel();
-    // changeButton();
-    // Fluttertoast.showToast(msg: current_flag.toString());
+  }
+
+  @override
+  void dispose() {
+    pay.clear();
+    super.dispose();
+  }
+
+  void openCheckOut(var cost) {
+    var options = {
+      "key": "rzp_test_0QRLt0VWx1lbC1",
+      "amount": cost * 100,
+      "name": "League",
+      "description": "Payment for Registering Team",
+      "prefill": {
+        "contact": phoneNo,
+        "email": "",
+      },
+    };
+
+    try {
+      pay.open(options);
+    } catch (e) {
+      Fluttertoast.showToast(msg: e.toString());
+    }
   }
 
   changeButton() async {
@@ -284,11 +378,13 @@ class GroupDetailState extends State<GroupDetail> {
       this.description,
       this.image_url,
       this.date,
-      this.time);
+      this.time,
+      this.fees);
   int count;
   //int number=count;
   int flag;
   String peerId;
+  var fees;
   String query, image_url, time, userId;
   DateTime date;
   var follow_prefs;
@@ -317,14 +413,11 @@ class GroupDetailState extends State<GroupDetail> {
         bottomSheet: isLoading
             ? Center(child: Loader())
             : Container(
-                 decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.orangeAccent,
-                                    Colors.pinkAccent
-                                  ],
-                                ),
-                              ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.orangeAccent, Colors.pinkAccent],
+                  ),
+                ),
                 height: height / 12,
                 width: width,
                 child: Row(
@@ -345,148 +438,143 @@ class GroupDetailState extends State<GroupDetail> {
         ),
         backgroundColor: Colors.white,
         body: Container(
-          child:  ListView(
+          height:height/1.25,
+          child: ListView(
+            children: [
+              SizedBox(height:height/20),
+              Container(
+                child: new Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.all(Radius.circular(100)),
+                    child: Image(
+                      height: height / 6,
+                      width: width / 2.8,
+                      fit: BoxFit.cover,
+                      image: NetworkImage(image_url),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+              //   Padding(
+              //   padding: EdgeInsets.only(left: 10.0),
+              Center(
+                child: Text(group_name,
+                    style:
+                        TextStyle(fontSize: 24.0, fontWeight: FontWeight.w600)),
+              ),
+              // ),
+              SizedBox(height: height / 18),
+              Row(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.access_time, color: Colors.red),
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    "Time",
+                    style: TextStyle(fontSize: 20),
+                  )
+                ],
+              ),
+              Padding(
+                padding: EdgeInsets.only(left: 60),
+                child: new Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(height: height / 20),
-                    Container(
-                      child: new Center(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.all(Radius.circular(100)),
-                          child: Image(
-                            height: height / 6,
-                            width: width / 2.8,
-                            fit: BoxFit.cover,
-                            image: NetworkImage(image_url),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    //   Padding(
-                    //   padding: EdgeInsets.only(left: 10.0),
-                    Center(
-                      child: Text(group_name,
-                          style: TextStyle(
-                              fontSize: 24.0, fontWeight: FontWeight.w600)),
-                    ),
-                    // ),
-                    SizedBox(height: height / 18),
-                    Row(
+                    new Column(
                       children: [
-                        IconButton(
-                          icon: Icon(Icons.access_time, color: Colors.red),
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          "Time",
-                          style: TextStyle(fontSize: 20),
-                        )
-                      ],
-                    ),
-                    Padding(
-                      padding: EdgeInsets.only(left: 60),
-                      child: new Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          new Column(
-                            children: [
-                              new Text(date.toString().substring(0, 11),
-                                  style: TextStyle(
-                                      color: Colors.blueGrey, fontSize: 18
-                                      //  fontWeight: FontWeight.bold
-                                      )),
-                              new Text(
-                                  time.substring(
-                                    9,
-                                  ),
-                                  style: TextStyle(
-                                    color: Colors.blueGrey,
-                                    //  fontWeight: FontWeight.bold
-                                  )),
-                            ],
-                          )
-                        ],
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.location_on, color: Colors.red),
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          "Location",
-                          style: TextStyle(fontSize: 20),
-                        )
-                      ],
-                    ),
-                    Padding(
-                      padding: EdgeInsets.only(left: 60),
-                      child: new Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          new Text(location,
-                              style: TextStyle(
-                                color: Colors.blueGrey,
-                                fontSize: 17,
-                                // fontWeight: FontWeight.w300
+                        new Text(date.toString().substring(0, 11),
+                            style: TextStyle(color: Colors.blueGrey, fontSize: 18
                                 //  fontWeight: FontWeight.bold
-                              )),
-                        ],
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.email, color: Colors.red),
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          "Email",
-                          style: TextStyle(fontSize: 20),
-                        )
+                                )),
+                        new Text(
+                            time.substring(
+                              9,
+                            ),
+                            style: TextStyle(
+                              color: Colors.blueGrey,
+                              //  fontWeight: FontWeight.bold
+                            )),
                       ],
-                    ),
-                    Padding(
-                      padding: EdgeInsets.only(left: 60),
-                      child: new Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          new Text(email_id,
-                              style:
-                                  TextStyle(color: Colors.blueGrey, fontSize: 18
-                                      //  fontWeight: FontWeight.bold
-                                      )),
-                        ],
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.announcement, color: Colors.red),
-                        ),
-                        SizedBox(width: 10),
-                        Text(
-                          "Description",
-                          style: TextStyle(fontSize: 20),
-                        )
-                      ],
-                    ),
-                    Padding(
-                      padding: EdgeInsets.only(left: 60),
-                      child: new Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          new Text(description,
-                              style:
-                                  TextStyle(color: Colors.blueGrey, fontSize: 18
-                                      //  fontWeight: FontWeight.bold
-                                      )),
-                        ],
-                      ),
-                    ),
+                    )
                   ],
                 ),
+              ),
+              Row(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.location_on, color: Colors.red),
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    "Location",
+                    style: TextStyle(fontSize: 20),
+                  )
+                ],
+              ),
+              Padding(
+                padding: EdgeInsets.only(left: 60),
+                child: new Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    new Text(location,
+                        style: TextStyle(
+                          color: Colors.blueGrey,
+                          fontSize: 17,
+                          // fontWeight: FontWeight.w300
+                          //  fontWeight: FontWeight.bold
+                        )),
+                  ],
+                ),
+              ),
+              Row(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.email, color: Colors.red),
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    "Email",
+                    style: TextStyle(fontSize: 20),
+                  )
+                ],
+              ),
+              Padding(
+                padding: EdgeInsets.only(left: 60),
+                child: new Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    new Text(email_id,
+                        style: TextStyle(color: Colors.blueGrey, fontSize: 18
+                            //  fontWeight: FontWeight.bold
+                            )),
+                  ],
+                ),
+              ),
+              Row(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.announcement, color: Colors.red),
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    "Description",
+                    style: TextStyle(fontSize: 20),
+                  )
+                ],
+              ),
+              Container(
+                child: Padding(
+                  padding: EdgeInsets.only(left: 60),
+                  child: new Text(description,
+                      style: TextStyle(color: Colors.blueGrey, fontSize: 18
+                          //  fontWeight: FontWeight.bold
+                          )),
+                ),
+              ),
+            ],
+          ),
         ));
   }
 
@@ -524,44 +612,10 @@ class GroupDetailState extends State<GroupDetail> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20.0)),
               color: Colors.white,
-              child: Text("Attend", style: TextStyle(color: Colors.black)),
+              child: Text("Rs.$fees Attend",
+                  style: TextStyle(color: Colors.black)),
               onPressed: () async {
-                FirebaseUser user = await FirebaseAuth.instance.currentUser();
-                var documentId = user.uid;
-
-                Map<String, dynamic> blogMap = {
-                  "user_email": user.email,
-                  "group_Name": group_name,
-                  "date": date.toString().substring(0, 11),
-                  "imageUrl": image_url
-                };
-                Firestore.instance
-                    .collection("Qr Code")
-                    .document(documentId)
-                    .collection('Registered')
-                    .add(blogMap)
-                    .catchError((e) {
-                  print(e);
-                });
-
-                readLocal();
-                if (20 - count > 1) {
-                  email(email_id);
-                }
-                if (count > 0) {
-                  count = count - 1;
-                }
-                // setState(() {
-                flag = 1;
-                // });
-                flag = 1;
-                crudeMethod.updateData(query, {'seat': count});
-                updateflagdata('1');
-                if (flag == 1) {
-                  setState(() {
-                    selectedWidget = WidgetMaker.Another;
-                  });
-                }
+                openCheckOut(int.parse(fees));
               },
             )),
 
@@ -573,64 +627,59 @@ class GroupDetailState extends State<GroupDetail> {
   Widget getAnotherWidget(query, count, flag, height) {
     return Container(
         //   height: height / 8,
-        
-        child: new Row(children: <Widget>[
-          SizedBox(width: 20),
-          Text("You're going",
-              style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black)),
-          SizedBox(width: 20),
-          new RaisedButton(
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20.0)),
-            color: Colors.white,
-            onPressed: () async {
-              FirebaseUser user = await FirebaseAuth.instance.currentUser();
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => QRcode(user.email, group_name)));
-            },
-            child: Text("QR code", style: TextStyle(color: Colors.black)),
-          ),
-          SizedBox(width: 10),
-          new RaisedButton(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20.0)),
-              color: Colors.white,
-              onPressed: () {
-                //setState(() {
-                flag = 2;
-                //  });
-                updateflagdata('2');
-                if (flag == 2) {
-                  setState(() {
-                    selectedWidget = WidgetMaker.Delete;
-                  });
-                }
-              },
-              child: Text(
-                "Edit",
-                style: TextStyle(color: Colors.black),
-              )),
 
-          //  )
-        ]));
+        child: new Row(children: <Widget>[
+      SizedBox(width: 20),
+      Text("You're going",
+          style: TextStyle(
+              fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black)),
+      SizedBox(width: 20),
+      new RaisedButton(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+        color: Colors.white,
+        onPressed: () async {
+          FirebaseUser user = await FirebaseAuth.instance.currentUser();
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => QRcode(user.email, group_name)));
+        },
+        child: Text("QR code", style: TextStyle(color: Colors.black)),
+      ),
+      SizedBox(width: 10),
+      new RaisedButton(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+          color: Colors.white,
+          onPressed: () {
+            //setState(() {
+            flag = 2;
+            //  });
+            updateflagdata('2');
+            if (flag == 2) {
+              setState(() {
+                selectedWidget = WidgetMaker.Delete;
+              });
+            }
+          },
+          child: Text(
+            "Edit",
+            style: TextStyle(color: Colors.black),
+          )),
+
+      //  )
+    ]));
   }
 
   Widget getDeleteButton(query, count, flag, height) {
     return Container(
       //   height: height / 8,
-       decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.orangeAccent,
-                                    Colors.pinkAccent
-                                  ],
-                                ),
-                              ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.orangeAccent, Colors.pinkAccent],
+        ),
+      ),
       child: Padding(
         padding: EdgeInsets.only(left: 20.0),
         child: Row(children: <Widget>[

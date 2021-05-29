@@ -1,4 +1,3 @@
-
 import 'dart:io';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -6,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:alliance/views/crud.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:image_picker/image_picker.dart';
@@ -38,14 +38,13 @@ class MultiSelectDialog<V> extends StatefulWidget {
   final List<MultiSelectDialogItem<V>> items;
   final Set<V> initialSelectedValues;
 
-
   @override
   State<StatefulWidget> createState() => _MultiSelectDialogState<V>();
 }
 
 class _MultiSelectDialogState<V> extends State<MultiSelectDialog<V>> {
   final _selectedValues = Set<V>();
-    String documentId;
+  String documentId;
 
   void initState() {
     super.initState();
@@ -53,8 +52,6 @@ class _MultiSelectDialogState<V> extends State<MultiSelectDialog<V>> {
       _selectedValues.addAll(widget.initialSelectedValues);
     }
   }
-
-  
 
   void _onItemCheckedChange(V itemValue, bool checked) {
     setState(() {
@@ -73,7 +70,6 @@ class _MultiSelectDialogState<V> extends State<MultiSelectDialog<V>> {
   void _onSubmitTap() {
     Navigator.pop(context, _selectedValues);
   }
-  
 
   @override
   Widget build(BuildContext context) {
@@ -117,30 +113,25 @@ class _MultiSelectDialogState<V> extends State<MultiSelectDialog<V>> {
 class GroupPageState extends State<addGroup> {
   GroupPageState();
   String photoUrl;
- // bool isLoading;
+  // bool isLoading;
   TimeOfDay time = TimeOfDay.now();
 
-   @override
+  @override
   void initState() {
     isLoading = true;
     super.initState();
     getPhotoUrl();
   }
-   
-  
 
   getPhotoUrl() async {
     FirebaseUser user = await FirebaseAuth.instance.currentUser();
     setState(() {
       if (user.photoUrl != null) {
         photoUrl = user.photoUrl;
-      } else {
-        photoUrl = "https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.istockphoto.com%2Fphotos%2Fone-person&psig=AOvVaw0xphJEp-I1hhtp5VAOsOaT&ust=1622110033168000&source=images&cd=vfe&ved=0CAIQjRxqFwoTCPing_eM5_ACFQAAAAAdAAAAABAD";
       }
     });
     isLoading = false;
   }
-  
 
   DateTime selectedDate = DateTime.now();
 
@@ -159,7 +150,8 @@ class GroupPageState extends State<addGroup> {
 
   String groupName, description, email, distanceInKm;
   String location;
-  var latitude,longitude;
+  var latitude, longitude;
+  var fees;
   String id;
   List<String> interest = List();
   int seat_count;
@@ -176,36 +168,39 @@ class GroupPageState extends State<addGroup> {
   List<MultiSelectDialogItem<int>> multiItem = List();
   var startPoint = TextEditingController();
   String documentId;
-  List<String> x =List();
+  List<String> x = List();
   Future getImage() async {
     var image = await ImagePicker.pickImage(source: ImageSource.gallery);
     setState(() {
       selectedImage = image;
     });
   }
-  
+
   getLatitudeAndLongitude(String eventAddress) async {
-      List<Placemark> placemark = await Geolocator().placemarkFromAddress(eventAddress);
-      setState(() {
-        latitude = placemark.first.position.latitude;
-        longitude = placemark.first.position.longitude;
-      });
+    List<Placemark> placemark =
+        await Geolocator().placemarkFromAddress(eventAddress);
+    setState(() {
+      latitude = placemark.first.position.latitude;
+      longitude = placemark.first.position.longitude;
+    });
   }
 
   uploadData() async {
-     FirebaseUser user = await FirebaseAuth.instance.currentUser();
+    FirebaseUser user = await FirebaseAuth.instance.currentUser();
     setState(() {
       documentId = user.uid;
     });
-   
-   
-   Firestore.instance.collection("User_Group_$documentId").snapshots().listen((event) {
-       event.documents.forEach((element) {
-         setState(() {
-           x.add(element["joinedGroupName"]);
-         });
-       });
-   });
+
+    Firestore.instance
+        .collection("User_Group_$documentId")
+        .snapshots()
+        .listen((event) {
+      event.documents.forEach((element) {
+        setState(() {
+          x.add(element["joinedGroupName"]);
+        });
+      });
+    });
     if (selectedImage != null) {
       setState(() {
         isLoading = true;
@@ -218,7 +213,7 @@ class GroupPageState extends State<addGroup> {
       final StorageUploadTask task = firebaseStorageRef.putFile(selectedImage);
       var downloadUrl = await (await task.onComplete).ref.getDownloadURL();
       Map<String, dynamic> blogMap = {
-        'id':randomAlphaNumeric(9),
+        'id': randomAlphaNumeric(9),
         "imgUrl": downloadUrl,
         "groupName": groupName,
         "description": description,
@@ -228,35 +223,34 @@ class GroupPageState extends State<addGroup> {
         "interest": teamCreatorInterest,
         "email": email,
         "seat": currentValue,
+        "fees": fees,
         "flag": 0,
         "time": time.toString(),
         "date": selectedDate,
       };
-    //  Fluttertoast.showToast(msg: x.toString());
-    if(x.contains(groupName)){
-      Map<String , dynamic >notificationData={
-         'date': selectedDate,
-         'groupName': groupName,
-         "imgUrl": downloadUrl,
-      };
-      Firestore.instance.collection("Notification_data_$documentId").add(notificationData).catchError((e){
-      print(e);
-    });
-    Firestore.instance
-          .collection('Notification_Icon')
-          .document(documentId)
-          .setData({'icon_count': '0'});
-    }
+      //  Fluttertoast.showToast(msg: x.toString());
+      if (x.contains(groupName)) {
+        Map<String, dynamic> notificationData = {
+          'date': selectedDate,
+          'groupName': groupName,
+          "imgUrl": downloadUrl,
+        };
+        Firestore.instance
+            .collection("Notification_data_$documentId")
+            .add(notificationData)
+            .catchError((e) {
+          print(e);
+        });
+        Firestore.instance
+            .collection('Notification_Icon')
+            .document(documentId)
+            .setData({'icon_count': '0'});
+      }
       crudeMethod.addData(blogMap).then((value) {
         Navigator.pop(context);
       });
-     
-     
     }
   }
-
-  
-  
 
   loadData() {
     ListDrop = [];
@@ -266,7 +260,7 @@ class GroupPageState extends State<addGroup> {
         new DropdownMenuItem(child: new Text("Dance"), value: "Dance"));
     ListDrop.add(
         new DropdownMenuItem(child: new Text("Drama"), value: "Drama"));
-         ListDrop.add(
+    ListDrop.add(
         new DropdownMenuItem(child: new Text("Drama"), value: "Coding"));
   }
 
@@ -290,7 +284,7 @@ class GroupPageState extends State<addGroup> {
     });
   }
 
-  final valuestopopulate = {1: "Music", 2: "Dance", 3: "Drama",4: "Coding"};
+  final valuestopopulate = {1: "Music", 2: "Dance", 3: "Drama", 4: "Coding"};
 
   void populateMultiSelect() {
     for (int v in valuestopopulate.keys) {
@@ -321,7 +315,7 @@ class GroupPageState extends State<addGroup> {
           teamCreatorInterest.add(valuestopopulate[x]);
         });
       }
-    } 
+    }
   }
 
   @override
@@ -350,7 +344,7 @@ class GroupPageState extends State<addGroup> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         new Container(
-                          height: height / 4,
+                          height: (photoUrl == null) ? height / 10 : height / 4,
                           decoration: BoxDecoration(
                             color: Colors.grey[200],
                           ),
@@ -359,18 +353,20 @@ class GroupPageState extends State<addGroup> {
                               SizedBox(
                                 height: 10,
                               ),
-                              new Center(
-                                child: ClipRRect(
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(100)),
-                                  child: Image(
-                                    height: height / 6,
-                                    width: width / 2.8,
-                                    fit: BoxFit.cover,
-                                    image: NetworkImage(photoUrl),
-                                  ),
-                                ),
-                              ),
+                              (photoUrl == null)
+                                  ? Container()
+                                  : new Center(
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(100)),
+                                        child: Image(
+                                          height: height / 6,
+                                          width: width / 2.8,
+                                          fit: BoxFit.cover,
+                                          image: NetworkImage(photoUrl),
+                                        ),
+                                      ),
+                                    ),
                               SizedBox(height: 10),
                               Text("Start a new Meetup group",
                                   style: TextStyle(
@@ -477,7 +473,35 @@ class GroupPageState extends State<addGroup> {
                                       ),
                                     ),
                                     SizedBox(height: 20.0),
-                                    //  SizedBox(height: 10.0),
+                                    new Container(
+                                      margin:
+                                          EdgeInsets.symmetric(horizontal: 16),
+                                      decoration: BoxDecoration(
+                                          color: Colors.grey[200],
+                                          border:
+                                              Border.all(color: Colors.black)),
+                                      child: TextFormField(
+                                        keyboardType: TextInputType.number,
+                                        validator: (String value) {
+                                          if (value.isEmpty) {
+                                            return "Please enter event fees";
+                                          }
+                                        },
+                                        decoration: InputDecoration(
+                                      
+                                            contentPadding:
+                                                EdgeInsets.only(left: 10),
+                                            hintText: "Event Fees",
+                                            hintStyle: TextStyle(
+                                                color: Colors.grey,
+                                                fontFamily: "Trojan",
+                                                fontWeight: FontWeight.w600),
+                                            border: InputBorder.none),
+                                        onChanged: (val) {
+                                          fees = val;
+                                        },
+                                      ),
+                                    ),
                                     Container(
                                       margin:
                                           EdgeInsets.symmetric(horizontal: 16),
@@ -625,7 +649,8 @@ class GroupPageState extends State<addGroup> {
                                                 onSelect: (place) {
                                                   startPoint.text =
                                                       place.placeName;
-                                                   getLatitudeAndLongitude(place.placeName);
+                                                  getLatitudeAndLongitude(
+                                                      place.placeName);
                                                 },
                                                 limit: 10);
                                           }));
@@ -707,9 +732,10 @@ class GroupPageState extends State<addGroup> {
                                             left: width / 22,
                                             right: width / 20),
                                         decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors:[Colors.orange,Colors.pink]
-                                          ),
+                                          gradient: LinearGradient(colors: [
+                                            Colors.orange,
+                                            Colors.pink
+                                          ]),
                                           border:
                                               Border.all(color: Colors.black),
                                         ),

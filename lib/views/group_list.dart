@@ -4,7 +4,6 @@ import 'package:alliance/views/loginpage.dart';
 import 'package:alliance/views/new_intro.dart';
 import 'package:alliance/views/profile.dart';
 import 'package:flutter/services.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:android_intent/android_intent.dart';
 import 'package:alliance/views/auth.dart';
 import 'package:alliance/views/crud.dart';
@@ -17,7 +16,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/widgets.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:hexcolor/hexcolor.dart';
 
 class GroupList extends StatefulWidget {
@@ -57,14 +55,6 @@ class GroupListState extends State<GroupList> {
     "Dance",
     "Coding",
     "Drama",
-    "Music",
-    "Dance",
-    "Coding",
-    "Drama",
-    "Music",
-    "Dance",
-    "Coding",
-    "Drama"
   ];
   List<dynamic> interest_data = List();
   List<dynamic> filtered_user = List();
@@ -72,8 +62,8 @@ class GroupListState extends State<GroupList> {
   @override
   void initState() {
     super.initState();
-    requestLocationPermission();
-    _gpsService();
+   // requestLocationPermission();
+  //  _gpsService();
     createInterestModel();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await checkToShowDialog();
@@ -84,27 +74,12 @@ class GroupListState extends State<GroupList> {
     //   getGroupWithinRange();
   }
 
-  Future<bool> _requestPermission(PermissionGroup permission) async {
-    final PermissionHandler _permissionHandler = PermissionHandler();
-    var result = await _permissionHandler.requestPermissions([permission]);
-    if (result[permission] == PermissionStatus.granted) {
-      return true;
-    }
-    return false;
-  }
 
-/*Checking if your App has been Given Permission*/
-  Future<bool> requestLocationPermission({Function onPermissionDenied}) async {
-    var granted = await _requestPermission(PermissionGroup.location);
-    if (granted != true) {
-      requestLocationPermission();
-    }
-    return granted;
-  }
+
+
 
 /*Show dialog if GPS not enabled and open settings location*/
   Future _checkGps() async {
-    if (!(await Geolocator().isLocationServiceEnabled())) {
       if (Theme.of(context).platform == TargetPlatform.android) {
         showDialog(
             context: context,
@@ -127,18 +102,10 @@ class GroupListState extends State<GroupList> {
               );
             });
       }
-    }
   }
 
 /*Check if gps service is enabled or not*/
-  Future _gpsService() async {
-    if (!(await Geolocator().isLocationServiceEnabled())) {
-      _checkGps();
-      return null;
-    } else
-      return true;
-  }
-
+  
   getUserDocumentId() async {
     FirebaseUser user = await FirebaseAuth.instance.currentUser();
     String documentId = user.uid;
@@ -289,17 +256,10 @@ class GroupListState extends State<GroupList> {
     String documentId = user.uid;
     Firestore.instance.collection("Alliance").snapshots().listen((event) {
       event.documents.forEach((element) async {
-        final position = await Geolocator()
-            .getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
-        List<Placemark> placemark =
-            await Geolocator().placemarkFromAddress(element["location"]);
-        double distance = await Geolocator().distanceBetween(
-            position.latitude,
-            position.longitude,
-            placemark.first.position.latitude,
-            placemark.first.position.longitude);
-        distance_in_km = (distance ~/ 1000).toInt();
-        var set1 = Set.from(element["interest"]);
+       
+      
+       
+               var set1 = Set.from(element["interest"]);
         var set2 = Set.from(interest_data);
         if (set1.intersection(set2).isNotEmpty) {
           setState(() {
@@ -527,7 +487,9 @@ class GroupListState extends State<GroupList> {
                                           description,
                                           image_url,
                                           date,
-                                          time);
+                                          time,
+                                          snapshot.data.documents[i].data['fees']
+                                          );
                                     }));
                                   },
                                   child: Column(
@@ -693,7 +655,7 @@ class GroupListState extends State<GroupList> {
                                           description,
                                           image_url,
                                           date,
-                                          time);
+                                          time,snapshot.data.documents[i].data['fees']);
                                     }));
                                   },
                                   child: Column(
