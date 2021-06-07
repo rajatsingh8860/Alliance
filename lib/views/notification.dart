@@ -19,10 +19,12 @@ class NotificationState extends State<NotificationOfGroups> {
     setState(() {
       uploading = true;
     });
+    FirebaseUser user = await FirebaseAuth.instance.currentUser();
+    setState(() {
+      documentId = user.uid;
+    });
     await Firestore.instance
-        .collection("Qr Code")
-        .document(documentId)
-        .collection('Registered')
+        .collection("Notification_data_$documentId")
         .snapshots()
         .listen((event) {
       if (event.documents.length == 0) {
@@ -81,51 +83,55 @@ class NotificationState extends State<NotificationOfGroups> {
       body: (uploading)
           ? Center(child: CircularProgressIndicator())
           : !exists
-              ? NoDataFoundWidget("No data found") : StreamBuilder(
-          stream: Firestore.instance
-              .collection("Notification_data_$documentId")
-              .snapshots(),
-          builder: (BuildContext context, snapshot) {
-            if (!snapshot.hasData)
-              return Container(
-                  alignment: Alignment.center,
-                  child: CircularProgressIndicator());
-            return Container(
-              height: height,
-              child: Container(
-                padding: EdgeInsets.only(top: 20),
-                child: new ListView.builder(
-                  scrollDirection: Axis.vertical,
-                  physics: BouncingScrollPhysics(),
-                  itemCount: snapshot.data.documents.length,
-                  itemBuilder: (context, i) {
-                    String groupName =
-                        snapshot.data.documents[i].data['groupName'];
-                    String imageUrl = snapshot.data.documents[i].data['imgUrl'];
-                    DateTime date =
-                        snapshot.data.documents[i].data['date'].toDate();
-                    return Padding(
-                      padding: EdgeInsets.all(10),
-                      child: ListTile(
-                        dense: true,
-                        leading: Image.network(
-                          imageUrl,
-                          height: 50,
-                          width: 50,
-                          fit: BoxFit.cover,
-                        ),
-                        title: Text(
-                          "$groupName just announced a new event for ${date.toString().substring(0, 10)}.",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 15),
+              ? NoDataFoundWidget("No data found")
+              : StreamBuilder(
+                  stream: Firestore.instance
+                      .collection("Notification_data_$documentId")
+                      .snapshots(),
+                  builder: (BuildContext context, snapshot) {
+                    if (!snapshot.hasData)
+                      return Container(
+                          alignment: Alignment.center,
+                          child: CircularProgressIndicator());
+                    return Container(
+                      height: height,
+                      child: Container(
+                        padding: EdgeInsets.only(top: 20),
+                        child: new ListView.builder(
+                          scrollDirection: Axis.vertical,
+                          physics: BouncingScrollPhysics(),
+                          itemCount: snapshot.data.documents.length,
+                          itemBuilder: (context, i) {
+                            String groupName =
+                                snapshot.data.documents[i].data['groupName'];
+                            String imageUrl =
+                                snapshot.data.documents[i].data['imgUrl'];
+                            DateTime date = snapshot
+                                .data.documents[i].data['date']
+                                .toDate();
+                            return Padding(
+                              padding: EdgeInsets.all(10),
+                              child: ListTile(
+                                dense: true,
+                                leading: Image.network(
+                                  imageUrl,
+                                  height: 50,
+                                  width: 50,
+                                  fit: BoxFit.cover,
+                                ),
+                                title: Text(
+                                  "$groupName just announced a new event for ${date.toString().substring(0, 10)}.",
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15),
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
                     );
-                  },
-                ),
-              ),
-            );
-          }),
+                  }),
     );
   }
 }

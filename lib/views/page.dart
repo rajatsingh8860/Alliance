@@ -192,7 +192,9 @@ class GroupPageState extends State<addGroup> {
     });
 
     Firestore.instance
-        .collection("User_Group_$documentId")
+              .collection("User_Group")
+              .document(documentId)
+              .collection("My Groups")
         .snapshots()
         .listen((event) {
       event.documents.forEach((element) {
